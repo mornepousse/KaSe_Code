@@ -1,9 +1,0 @@
--- ccache will be used for faster recompilation
--- Building ESP-IDF components for target esp32
-Dependencies lock doesn't exist, solving dependencies.
-HINT: Component "espressif/tinyusb" has suitable versions for other targets: "esp32s2", "esp32s3", "esp32p4". Is your current target "esp32" set correctly?
-.HINT: Component "espressif/tinyusb" has suitable versions for other targets: "esp32s2", "esp32s3", "esp32p4". Is your current target "esp32" set correctly?
-HINT: Component "espressif/tinyusb" has suitable versions for other targets: "esp32s2", "esp32s3", "esp32p4". Is your current target "esp32" set correctly?
-HINT: Component "espressif/tinyusb" has suitable versions for other targets: "esp32s2", "esp32s3", "esp32p4". Is your current target "esp32" set correctly?
-..-- Configuring incomplete, errors occurred!
-See also "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build/CMakeFiles/CMakeOutput.log".
