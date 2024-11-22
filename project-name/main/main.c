@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Unlicense OR CC0-1.0
- */
-
 #include <stdlib.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -158,8 +152,7 @@ void key_reports(void *pvParameters) {
 	uint8_t past_report[REPORT_LEN] = { 0 };
 	uint8_t report_state[REPORT_LEN];
 	while (1) {
-		memcpy(report_state, check_key_state(default_layouts[current_layout]),
-				sizeof report_state);
+		//lmemcpy(report_state, check_key_state(default_layouts[current_layout]), sizeof report_state);
 		//Check if the report was modified, if so send it
 		if (memcmp(past_report, report_state, sizeof past_report) != 0) {
 			//void* pReport;
@@ -199,7 +192,7 @@ void app_main(void)
 	rtc_matrix_deinit();
     matrix_setup();
     //nvs_load_layouts();
-	xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
+	//xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
 
     while (1) {
         if (tud_mounted()) {
