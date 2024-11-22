@@ -11,19 +11,17 @@
 #include "tinyusb.h"
 #include "class/hid/hid_device.h"
 #include "driver/gpio.h"
+#include "matrix.h"
+#include "keypress_handles.c"
+#include "keyboard_config.h"
 
 #define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
-
-const gpio_num_t MATRIX_ROWS_PINS[] = { GPIO_NUM_0, GPIO_NUM_2, GPIO_NUM_4,
-		GPIO_NUM_12, GPIO_NUM_13, GPIO_NUM_14 };
-const gpio_num_t MATRIX_COLS_PINS[] = { GPIO_NUM_15, GPIO_NUM_25, GPIO_NUM_26,
-		GPIO_NUM_27, GPIO_NUM_32, GPIO_NUM_33 };
 
 static const char *TAG = "Main";
 
 /************* TinyUSB descriptors ****************/
 
-#define TUSB_DESC_TOTAL_LEN      (TUD_CONFIG_DESC_LEN + CFG_TUD_HID * TUD_HID_DESC_LEN)
+#define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_HID * TUD_HID_DESC_LEN)
 
 /**
  * @brief HID report descriptor
@@ -41,11 +39,11 @@ const uint8_t hid_report_descriptor[] = {
  */
 const char* hid_string_descriptor[5] = {
     // array of pointer to string descriptors
-    (char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
-    "Mae",             // 1: Manufacturer
-    "Mae Keyboard",      // 2: Product
-    "1994",              // 3: Serials, should use chip ID
-    "Keyboard",  // 4: HID
+    (char[]){0x09, 0x04},   // 0: is supported language is English (0x0409)
+    "Mae",                  // 1: Manufacturer
+    "Mae Keyboard",         // 2: Product
+    "1994",                 // 3: Serials, should use chip ID
+    "Keyboard",             // 4: HID
 };
 
 /**
@@ -56,7 +54,6 @@ const char* hid_string_descriptor[5] = {
 static const uint8_t hid_configuration_descriptor[] = {
     // Configuration number, interface count, string index, total length, attribute, power in mA
     TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-
     // Interface number, string index, boot protocol, report descriptor len, EP In address, size & polling interval
     TUD_HID_DESCRIPTOR(0, 4, false, sizeof(hid_report_descriptor), 0x81, 16, 10),
 };

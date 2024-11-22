@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "project-name",
-    "project_version":    "3a7bbd7",
+    "project_version":    "1cd3e7c-dirty",
     "project_path":       "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name",
     "idf_path":           "C:/Users/maeha/esp/v5.3.1/esp-idf",
     "build_dir":          "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build",
@@ -561,11 +561,11 @@
             "type": "LIBRARY",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "esp_driver_gpio", "espressif__esp_tinyusb" ],
+            "priv_reqs": [ "esp_driver_gpio", "esp_timer", "espressif__esp_tinyusb" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__esp_tinyusb" ],
             "file": "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build/esp-idf/main/libmain.a",
-            "sources": [ "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main/tusb_hid_example_main.c" ],
+            "sources": [ "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main/keypress_handles.c", "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main/keymap.c", "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main/matrix.c", "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main/tusb_hid_example_main.c" ],
             "include_dirs": [ "." ]
         },
         "mbedtls": {
@@ -1978,7 +1978,7 @@
             "dir": "F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "esp_driver_gpio", "espressif__esp_tinyusb" ],
+            "priv_reqs": [ "esp_driver_gpio", "esp_timer", "espressif__esp_tinyusb" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__esp_tinyusb" ],
             "include_dirs": [ "." ]
