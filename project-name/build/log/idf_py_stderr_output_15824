@@ -1,0 +1,23 @@
+CMake Error at C:/Users/maeha/esp/v5.3.1/esp-idf/tools/cmake/build.cmake:552 (message):
+  ERROR: Because no versions of espressif/esp_tinyusb match >=1.1.0,<1.4.2~2
+  || >1.4.2~2,<1.4.3 || >1.4.3,<1.4.4 || >1.4.4,<1.4.5 || >1.4.5,<2.0.0
+
+   and espressif/esp_tinyusb (1.4.2~2) depends on espressif/tinyusb (>=0.14.2), espressif/esp_tinyusb (>=1.1.0,<1.4.3 || >1.4.3,<1.4.4 || >1.4.4,<1.4.5 || >1.4.5,<2.0.0) requires espressif/tinyusb (>=0.14.2).
+
+  And because espressif/esp_tinyusb (1.4.3) depends on espressif/tinyusb
+  (>=0.14.2), espressif/esp_tinyusb (>=1.1.0,<1.4.4 || >1.4.4,<1.4.5 ||
+  >1.4.5,<2.0.0) requires espressif/tinyusb (>=0.14.2).
+
+  And because espressif/esp_tinyusb (1.4.4) depends on both espressif/tinyusb
+  (>=0.14.2) and espressif/tinyusb (>=0.14.2), espressif/esp_tinyusb
+  (>=1.1.0,<2.0.0) requires espressif/tinyusb (>=0.14.2).
+
+  So, because no versions of espressif/tinyusb match >=0.14.2
+
+   and project depends on espressif/esp_tinyusb (^1.1), version solving failed.
+
+Call Stack (most recent call first):
+  C:/Users/maeha/esp/v5.3.1/esp-idf/tools/cmake/project.cmake:710 (idf_build_process)
+  CMakeLists.txt:10 (project)
+
+

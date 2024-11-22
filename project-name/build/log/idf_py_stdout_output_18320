@@ -1,0 +1,47 @@
+-- Found Git: C:/Users/maeha/.espressif/tools/idf-git/2.39.2/cmd/git.exe (found version "2.39.2.windows.1") 
+-- ccache will be used for faster recompilation
+-- The C compiler identification is GNU 13.2.0
+-- The CXX compiler identification is GNU 13.2.0
+-- The ASM compiler identification is GNU
+-- Found assembler: C:/Users/maeha/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc.exe
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Users/maeha/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Users/maeha/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Building ESP-IDF components for target esp32s3
+Dependencies lock doesn't exist, solving dependencies.
+....NOTICE: Updating lock file at F:\Harrael\Download\GitHub\Mae_Keyboard_Code\project-name\dependencies.lock
+Processing 3 dependencies:
+[1/3] espressif/esp_tinyusb (1.4.5)
+[2/3] espressif/tinyusb (0.15.0~10)
+[3/3] idf (5.3.1)
+-- Project sdkconfig file F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/sdkconfig
+Loading defaults file F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/sdkconfig.defaults...
+-- Compiler supported targets: xtensa-esp-elf
+-- Found Python3: C:/Users/maeha/.espressif/python_env/idf5.3_py3.11_env/Scripts/python.exe (found version "3.11.2") found components: Interpreter 
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS - Success
+-- App "project-name" version: 3a7bbd7
+-- Adding linker script F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build/esp-idf/esp_system/ld/memory.ld
+-- Adding linker script F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.wdt.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.newlib.ld
+-- Adding linker script C:/Users/maeha/esp/v5.3.1/esp-idf/components/soc/esp32s3/ld/esp32s3.peripherals.ld
+-- Components: app_update bootloader bootloader_support cxx efuse esp_app_format esp_bootloader_format esp_common esp_driver_gpio esp_driver_sdmmc esp_driver_sdspi esp_driver_spi esp_driver_uart esp_driver_usb_serial_jtag esp_event esp_hw_support esp_mm esp_netif esp_netif_stack esp_partition esp_pm esp_ringbuf esp_rom esp_system esp_timer esp_vfs_console espressif__esp_tinyusb espressif__tinyusb esptool_py fatfs freertos hal heap log lwip main mbedtls newlib partition_table pthread sdmmc soc spi_flash usb vfs wear_levelling xtensa
+-- Component paths: C:/Users/maeha/esp/v5.3.1/esp-idf/components/app_update C:/Users/maeha/esp/v5.3.1/esp-idf/components/bootloader C:/Users/maeha/esp/v5.3.1/esp-idf/components/bootloader_support C:/Users/maeha/esp/v5.3.1/esp-idf/components/cxx C:/Users/maeha/esp/v5.3.1/esp-idf/components/efuse C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_app_format C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_bootloader_format C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_common C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_gpio C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_sdmmc C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_sdspi C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_spi C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_uart C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_driver_usb_serial_jtag C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_event C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_hw_support C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_mm C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_netif C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_netif_stack C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_partition C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_pm C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_ringbuf C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_rom C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_system C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_timer C:/Users/maeha/esp/v5.3.1/esp-idf/components/esp_vfs_console F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/managed_components/espressif__esp_tinyusb F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/managed_components/espressif__tinyusb C:/Users/maeha/esp/v5.3.1/esp-idf/components/esptool_py C:/Users/maeha/esp/v5.3.1/esp-idf/components/fatfs C:/Users/maeha/esp/v5.3.1/esp-idf/components/freertos C:/Users/maeha/esp/v5.3.1/esp-idf/components/hal C:/Users/maeha/esp/v5.3.1/esp-idf/components/heap C:/Users/maeha/esp/v5.3.1/esp-idf/components/log C:/Users/maeha/esp/v5.3.1/esp-idf/components/lwip F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/main C:/Users/maeha/esp/v5.3.1/esp-idf/components/mbedtls C:/Users/maeha/esp/v5.3.1/esp-idf/components/newlib C:/Users/maeha/esp/v5.3.1/esp-idf/components/partition_table C:/Users/maeha/esp/v5.3.1/esp-idf/components/pthread C:/Users/maeha/esp/v5.3.1/esp-idf/components/sdmmc C:/Users/maeha/esp/v5.3.1/esp-idf/components/soc C:/Users/maeha/esp/v5.3.1/esp-idf/components/spi_flash C:/Users/maeha/esp/v5.3.1/esp-idf/components/usb C:/Users/maeha/esp/v5.3.1/esp-idf/components/vfs C:/Users/maeha/esp/v5.3.1/esp-idf/components/wear_levelling C:/Users/maeha/esp/v5.3.1/esp-idf/components/xtensa
+-- Configuring done
+-- Generating done
+-- Build files have been written to: F:/Harrael/Download/GitHub/Mae_Keyboard_Code/project-name/build
