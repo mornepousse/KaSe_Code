@@ -7,6 +7,9 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "keyboard_config.h"
+#include "keymap.h"
+#include "tinyusb.h"
+#include "class/hid/hid_device.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -143,6 +146,12 @@ void scan_matrix(void) {
 
 				if (MATRIX_STATE[row][col] != curState) {
 					MATRIX_STATE[row][col] = curState;
+
+					uint8_t keycode[6] = {default_layouts[current_layout][row][col]};
+    				if(curState == 1)tud_hid_keyboard_report(1, 0, keycode);
+					else tud_hid_keyboard_report(1, 0, 0);
+
+					ESP_LOGI(GPIO_TAG, "Row: %d, Col: %d, State: %d, K : %d", row, col, curState, keycode[0]);
 				}
 
 			}
@@ -152,7 +161,7 @@ void scan_matrix(void) {
 
 #endif
 #ifdef ROW2COL
-	// Setting row pin as low, and checking if the input of a column pin changes.
+	// Setting row pin as low, and checking if the input of a column pin changes.aaa============================================================
 	for(uint8_t row=0; row < MATRIX_ROWS; row++) {
 		gpio_set_level(MATRIX_ROWS_PINS[row], 1);
 
@@ -167,6 +176,7 @@ void scan_matrix(void) {
 
 				if( MATRIX_STATE[row][col] != curState) {
 					MATRIX_STATE[row][col] = curState;
+					ESP_LOGI(GPIO_TAG, "Row: %d, Col: %d, State: %d", row, col, curState);
 				}
 
 			}

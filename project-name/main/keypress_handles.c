@@ -1,22 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301, USA.
- *
- * Copyright 2018 Gal Zaidenstein.
- */
-
 #ifndef KEYPRESS_HANDLES_C
 #define KEYPRESS_HANDLES_C
 #include "freertos/FreeRTOS.h"
@@ -34,15 +15,11 @@
  */
 
 uint8_t KEY_STATE[MATRIX_ROWS][KEYMAP_COLS] = { 0 };
-uint16_t led_status = 0;
 uint8_t modifier = 0;
 uint16_t keycode = 0;
 
 // Sizing the report for N-key rollover
 uint8_t current_report[REPORT_LEN] = { 0 };
-
-// Array to send when releasing macros
-uint8_t macro_release[3] = { 0 };
 
 // Flag in order to know when to ignore layer change on layer hold
 uint8_t layer_hold_flag = 0;
@@ -60,54 +37,6 @@ uint16_t check_modifier(uint16_t key) {
 	return 0;
 
 }
-
-// checking if a led status key was pressed, returning current led status
-uint16_t check_led_status(uint16_t key) {
-
-	switch (key) {
-	case KC_NLCK:
-		return 1;
-
-	case KC_CAPS:
-		return 2;
-
-	case KC_SLCK:
-		return 3;
-
-	}
-	return 0;
-}
-
-// what to do on a media key press
-void media_control_send(uint16_t keycode) {
-
-	uint8_t media_state[2] = { 0 };
-	if (keycode == KC_MEDIA_NEXT_TRACK) {
-		media_state[1] = 10;
-	}
-	if (keycode == KC_MEDIA_PREV_TRACK) {
-		media_state[1] = 111;
-	}
-	if (keycode == KC_MEDIA_STOP) {
-		media_state[1] = 12;
-	}
-	if (keycode == KC_MEDIA_PLAY_PAUSE) {
-		media_state[1] = 5;
-	}
-	if (keycode == KC_AUDIO_MUTE) {
-		media_state[1] = 1;
-	}
-	if (keycode == KC_AUDIO_VOL_UP) {
-		SET_BIT(media_state[0], 6);
-	}
-	if (keycode == KC_AUDIO_VOL_DOWN) {
-		SET_BIT(media_state[0], 7);
-	}
-
-	//xQueueSend(media_q, (void*) &media_state, (TickType_t) 0);
-}
-
-
 
 //used for debouncing
 static uint32_t millis() {
@@ -141,10 +70,7 @@ void layer_adjust(uint16_t keycode) {
 				current_layout++;
 				break;
 			}
-#ifdef OLED_ENABLE
-			xQueueSend(layer_recieve_q, &current_layout, (TickType_t) 0);
-#endif
-			//ESP_LOGI(KEY_PRESS_TAG, "Layer modified!, Current layer: %d ", current_layout);
+			ESP_LOGI(KEY_PRESS_TAG, "Layer modified!, Current layer: %d ", current_layout);
 		}
 	}
 	prev_time = cur_time;
@@ -153,7 +79,7 @@ void layer_adjust(uint16_t keycode) {
 uint8_t matrix_prev_state[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 
 // checking the state of each key in the matrix
-uint8_t *check_key_state(uint16_t **keymap) {
+uint8_t *check_key_state() {
 
 	scan_matrix();
 	for (uint8_t pad = 0; pad < KEYPADS; pad++) {
@@ -169,7 +95,7 @@ uint8_t *check_key_state(uint16_t **keymap) {
 					continue;
 
 				uint16_t report_index = (2 + col + row * KEYMAP_COLS);
-				keycode = keymap[row][col];
+				keycode = _QWERTY[row][col];
 
 				//checking if the keycode is transparent
 				if (keycode == KC_TRNS) {
@@ -181,11 +107,8 @@ uint8_t *check_key_state(uint16_t **keymap) {
 					}
 				}
 
-				led_status = check_led_status(keycode);
 				if (matrix_state[row][col - MATRIX_COLS * pad] == 1) {
 
-
-					
 					//checking for layer hold
 					if ((keycode >= LAYER_HOLD_BASE_VAL)
 							&& (keycode <= LAYER_HOLD_MAX_VAL)) {
@@ -202,17 +125,12 @@ uint8_t *check_key_state(uint16_t **keymap) {
 					}
 
 					// checking for layer adjust keycodes
-					if ((keycode >= LAYERS_BASE_VAL)
-							&& (keycode < MACRO_BASE_VAL)) {
+					if (keycode >= LAYERS_BASE_VAL) 
+					{
 						layer_adjust(keycode);
 						continue;
 					}
 
-					// checking for media control keycodes
-					if ((keycode >= KC_MEDIA_NEXT_TRACK)
-							&& (keycode <= KC_AUDIO_VOL_DOWN)) {
-						media_control_send(keycode);
-					}
 
 					if (current_report[report_index] == 0) {
 						modifier |= check_modifier(keycode);
@@ -221,22 +139,20 @@ uint8_t *check_key_state(uint16_t **keymap) {
 					}
 				}
 				if (matrix_state[row][col - MATRIX_COLS * pad] == 0) {
-/*
+
 					//checking for layer hold release
-					if ((default_layouts[prev_layout][row][col] >= LAYER_HOLD_BASE_VAL)
+					if ((_QWERTY[row][col] >= LAYER_HOLD_BASE_VAL)
 							&& (keycode <= LAYER_HOLD_MAX_VAL)
 							&& (layer_hold_flag == 1)) {
 						current_layout = 0;
 						layer_hold_flag = 0;
 
-						//ESP_LOGI(KEY_PRESS_TAG, "Layer modified!, Current layer: %d ", current_layout);
+						ESP_LOGI(KEY_PRESS_TAG, "Layer modified!, Current layer: %d ", current_layout);
 					}
-*/
+
 
 					if (current_report[report_index] != 0) {
-						if (led_status != 0) {
-							led_status = 0;
-						}
+					
 
 						modifier &= ~check_modifier(keycode);
 						current_report[KEY_STATE[row][col]] = 0;
@@ -250,7 +166,6 @@ uint8_t *check_key_state(uint16_t **keymap) {
 		memcpy(matrix_prev_state, matrix_state, sizeof(matrix_state));
 	}
 	current_report[0] = modifier;
-	current_report[1] = led_status;
 	return current_report;
 
 }

@@ -18,7 +18,7 @@
 
 #define MASTER  // undefine if you are not flashing the main controller
 
-#define COL2ROW
+#define COL2ROW //COL2ROW ROW2COL
 
 #define DEBOUNCE 4 //debounce time in ms
 
@@ -42,31 +42,20 @@
 
 #define MAX_LAYER (LAYERS-1)
 #define MOD_LED_BYTES 2 //bytes for led status and modifiers
-#define MACRO_LEN 3 //keys for macros
 #define KEYMAP_COLS MATRIX_COLS*KEYPADS  // used for a symmetrical split keyboard
-#define REPORT_LEN (MOD_LED_BYTES+MACRO_LEN+MATRIX_ROWS*KEYMAP_COLS) //size of hid reports with NKRO and room for 3 key macro
-#define REPORT_COUNT_BYTES (MATRIX_ROWS*KEYMAP_COLS+MACRO_LEN)
+#define REPORT_LEN (MOD_LED_BYTES+MATRIX_ROWS*KEYMAP_COLS) //size of hid reports with NKRO and room for 3 key 
+#define REPORT_COUNT_BYTES (MATRIX_ROWS*KEYMAP_COLS)
 
 #define PLUGIN_BASE_VAL 0x135
 #define LAYER_HOLD_MAX_VAL 0x134
 #define LAYER_HOLD_BASE_VAL 0x123
-#define MACRO_BASE_VAL 0x103
 #define LAYERS_BASE_VAL 0xFF
-
-#define ENCODER_SIZE 4
-#define MEDIA_ENCODER 0
-#define MOUSE_ENCODER 1
-#define KEY_ENCODER 2
 
 typedef struct config_data {
 	char bt_device_name[MAX_BT_DEVICENAME_LENGTH];
 } config_data_t;
 
 extern uint8_t current_layout;
-extern uint8_t curr_led;
-
-extern uint16_t default_encoder_map[LAYERS][ENCODER_SIZE];
-extern uint16_t default_slave_encoder_map[LAYERS][ENCODER_SIZE];
 
 #define MAX_LAYOUT_NAME_LENGTH 15
 // array to hold names of layouts for oled

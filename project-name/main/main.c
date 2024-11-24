@@ -8,7 +8,11 @@
 #include "matrix.h"
 #include "keypress_handles.c"
 #include "keyboard_config.h"
-
+char **layer_names_arr;
+uint8_t layers_num=0;
+TaskHandle_t xKeyreportTask;
+uint8_t interval = 100;
+uint8_t current_interval = 0;
 #define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
 
 static const char *TAG = "Main";
@@ -152,14 +156,16 @@ void key_reports(void *pvParameters) {
 	uint8_t past_report[REPORT_LEN] = { 0 };
 	uint8_t report_state[REPORT_LEN];
 	while (1) {
-		//lmemcpy(report_state, check_key_state(default_layouts[current_layout]), sizeof report_state);
+		//memcpy(report_state, check_key_state(), sizeof report_state);
+        scan_matrix();
 		//Check if the report was modified, if so send it
+        /*
 		if (memcmp(past_report, report_state, sizeof past_report) != 0) {
 			//void* pReport;
 			memcpy(past_report, report_state, sizeof past_report);
 			//pReport = (void *) &report_state;
 		}
-
+*/
 	}
 
 }
@@ -187,11 +193,12 @@ void app_main(void)
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
     ESP_LOGI(TAG, "USB initialization DONE");
-
+    
     //Reset the rtc GPIOS   
 	rtc_matrix_deinit();
     matrix_setup();
     //nvs_load_layouts();
+    
 	//xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
 
     while (1) {
@@ -201,6 +208,15 @@ void app_main(void)
                 app_send_hid_demo();
             }
             send_hid_data = !gpio_get_level(APP_BUTTON);
+            scan_matrix();
+
+           current_interval++;
+            if (current_interval < interval) {
+                current_interval = 0;
+                ESP_LOGI(TAG, "coucou");
+                //scan_matrix();
+            }
+
         }
         else {
             //activate keyboard BT stack
