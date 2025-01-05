@@ -8,7 +8,11 @@
 #include "matrix.h"
 #include "keypress_handles.c"
 #include "keyboard_config.h"
+#include "lvgl.h"
+#include "screen_manager.h"
+
 char **layer_names_arr;
+
 uint8_t layers_num = 0;
 TaskHandle_t xKeyreportTask;
 uint8_t interval = 10;
@@ -26,6 +30,19 @@ uint8_t last_layer = 0;
 #define CURSOR_DWN (GPIO_NUM_15)
 #define CURSOR_LFT (GPIO_NUM_5)
 #define CURSOR_RHT (GPIO_NUM_6)
+
+#define TEST_LCD_HOST               SPI2_HOST
+#define TEST_LCD_H_RES              (240)
+#define TEST_LCD_V_RES              (240)
+#define TEST_LCD_BIT_PER_PIXEL      (16)
+
+#define TEST_PIN_NUM_LCD_CS         (GPIO_NUM_1)
+#define TEST_PIN_NUM_LCD_PCLK       (GPIO_NUM_41)
+#define TEST_PIN_NUM_LCD_DATA0      (GPIO_NUM_42)
+#define TEST_PIN_NUM_LCD_RST        (GPIO_NUM_44)
+#define TEST_PIN_NUM_LCD_DC         (GPIO_NUM_2)
+
+#define TEST_DELAY_TIME_MS          (3000)
 
 uint8_t cursor_states[4] = {0, 0, 0, 0};//up, down, left, right
 
@@ -113,6 +130,7 @@ typedef enum
 #define DISTANCE_MAX 125
 #define DELTA_SCALAR 5
 
+/*
 static void mouse_draw_square_next_delta(int8_t *delta_x_ret, int8_t *delta_y_ret)
 {
     static mouse_dir_t cur_dir = MOUSE_DIR_RIGHT;
@@ -153,7 +171,8 @@ static void mouse_draw_square_next_delta(int8_t *delta_x_ret, int8_t *delta_y_re
         }
     }
 }
-
+*/
+/*
 static void app_send_hid_demo(void)
 {
     // Keyboard output: Send key 'a/A' pressed and released
@@ -175,6 +194,7 @@ static void app_send_hid_demo(void)
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
+*/
 uint8_t cursor_pressed_state = 0; 
 void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_state)
 {
@@ -263,7 +283,6 @@ void vTaskKeyboard(void *pvParameters)
     {
         // Task code goes here.
         scan_matrix();
-        uint8_t isPressed = 0;
         for (uint8_t i = 0; i < 6; i++)
         {
             if (current_press_col[i] != 255)
@@ -293,13 +312,11 @@ void vTaskKeyboard(void *pvParameters)
                         keycodes[i] = keycodeTMP;
                     }
                 }
-                isPressed = 1;
             }
             else
             {
 
                 keycodes[i] = 0;
-                isPressed = 1;
             }
         }
         if (current_layout != last_layer)
@@ -366,6 +383,8 @@ void app_main(void)
     rtc_matrix_deinit();
     matrix_setup();
 
+    //Init_gc9a01();
+    
     gpio_set_direction(CURSOR_LED_RED_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(CURSOR_LED_GRN_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(CURSOR_LED_BLU_PIN, GPIO_MODE_OUTPUT);
