@@ -192,75 +192,75 @@ enum hid_keyboard_keypad_usage {
 	KC_ROLL_OVER,
 	KC_POST_FAIL,
 	KC_UNDEFINED,
-	KC_A,
-	KC_B,
-	KC_C,
-	KC_D,
-	KC_E,
-	KC_F,
-	KC_G,
-	KC_H,
-	KC_I,
-	KC_J,
-	KC_K,
-	KC_L,
-	KC_M, /* 0x10 */
-	KC_N,
-	KC_O,
-	KC_P,
-	KC_Q,
-	KC_R,
-	KC_S,
-	KC_T,
-	KC_U,
-	KC_V,
-	KC_W,
-	KC_X,
-	KC_Y,
-	KC_Z,
-	KC_1,
-	KC_2,
-	KC_3, /* 0x20 */
-	KC_4,
-	KC_5,
-	KC_6,
-	KC_7,
-	KC_8,
-	KC_9,
-	KC_0,
-	KC_ENTER,
-	KC_ESCAPE,
-	KC_BSPACE,
-	KC_TAB,
-	KC_SPACE,
-	KC_MINUS,
-	KC_EQUAL,
-	KC_LBRACKET,
-	KC_RBRACKET, /* 0x30 */
-	KC_BSLASH, /* \ (and |) */
-	KC_NONUS_HASH, /* Non-US # and ~ (Typically near the Enter key) */
-	KC_SCOLON, /* ; (and :) */
-	KC_QUOTE, /* ' and " */
-	KC_GRAVE, /* Grave accent and tilde */
-	KC_COMMA, /* , and < */
-	KC_DOT, /* . and > */
-	KC_SLASH, /* / and ? */
-	KC_CAPSLOCK,
-	KC_F1,
-	KC_F2,
-	KC_F3,
-	KC_F4,
-	KC_F5,
-	KC_F6,
-	KC_F7, /* 0x40 */
-	KC_F8,
-	KC_F9,
-	KC_F10,
-	KC_F11,
-	KC_F12,
+	KC_A = 0x04, // Keyboard a and A
+	KC_B = 0x05, // Keyboard b and B
+	KC_C = 0x06, // Keyboard c and C
+	KC_D = 0x07, // Keyboard d and D
+	KC_E = 0x08, // Keyboard e and E
+	KC_F = 0x09, // Keyboard f and F
+	KC_G = 0x0a, // Keyboard g and G
+	KC_H = 0x0b, // Keyboard h and H
+	KC_I = 0x0c, // Keyboard i and I
+	KC_J = 0x0d, // Keyboard j and J
+	KC_K = 0x0e, // Keyboard k and K
+	KC_L = 0x0f, // Keyboard l and L
+	KC_M = 0x10, // Keyboard m and M
+	KC_N = 0x11, // Keyboard n and N
+	KC_O = 0x12, // Keyboard o and O
+	KC_P = 0x13, // Keyboard p and P
+	KC_Q = 0x14, // Keyboard q and Q
+	KC_R = 0x15, // Keyboard r and R
+	KC_S = 0x16, // Keyboard s and S
+	KC_T = 0x17, // Keyboard t and T
+	KC_U = 0x18, // Keyboard u and U
+	KC_V = 0x19, // Keyboard v and V
+	KC_W = 0x1a, // Keyboard w and W
+	KC_X = 0x1b, // Keyboard x and X
+	KC_Y = 0x1c, // Keyboard y and Y
+	KC_Z = 0x1d, // Keyboard z and Z
+    KC_1 = 0x1e, // Keyboard 1 and !
+    KC_2 = 0x1f, // Keyboard 2 and @
+    KC_3 = 0x20, // Keyboard 3 and #
+    KC_4 = 0x21, // Keyboard 4 and $
+    KC_5 = 0x22, // Keyboard 5 and %
+    KC_6 = 0x23, // Keyboard 6 and ^
+    KC_7 = 0x24, // Keyboard 7 and &
+    KC_8 = 0x25, // Keyboard 8 and *
+    KC_9 = 0x26, // Keyboard 9 and (
+    KC_0 = 0x27, // Keyboard 0 and )
+	KC_ENTER = 0x28,
+	KC_ESCAPE = 0x29,
+	KC_BSPACE = 0x2a,
+	KC_TAB = 0x2b,
+	KC_SPACE = 0x2c,
+	KC_MINUS = 0x2d,
+	KC_EQUAL = 0x2e,
+	KC_LBRACKET = 0x2f,
+	KC_RBRACKET = 0x30, /* 0x30 */
+	KC_BSLASH = 0x31, /* \ (and |) */
+	KC_NONUS_HASH = 0x32, /* Non-US # and ~ (Typically near the Enter key) */
+	KC_SCOLON = 0x33, /* ; (and :) */
+	KC_QUOTE = 0x34, /* ' and " */
+	KC_GRAVE = 0x35, /* Grave accent and tilde */
+	KC_COMMA = 0x36, /* , and < */
+	KC_DOT = 0x37, /* . and > */
+	KC_SLASH = 0x38, /* / and ? */
+	KC_CAPSLOCK = 0x39,
+	KC_F1 = 0x3a,
+	KC_F2 = 0x3b,
+	KC_F3 = 0x3c,
+	KC_F4 = 0x3d,
+	KC_F5 = 0x3e,
+	KC_F6 = 0x3f,
+	KC_F7 = 0x40, /* 0x40 */
+	KC_F8 = 0x41,
+	KC_F9 = 0x42,
+	KC_F10 = 0x43,
+	KC_F11 = 0x44,
+	KC_F12 = 0x45,
 	KC_PSCREEN,
 	KC_SCROLLLOCK,
-	KC_PAUSE,
+	KC_PAUSE ,
 	KC_INSERT,
 	KC_HOME,
 	KC_PGUP,

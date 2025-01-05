@@ -22,7 +22,12 @@ extern "C" {
 extern uint8_t MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS];
 extern uint8_t SLAVE_MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS];
 extern uint8_t (*matrix_states[])[MATRIX_ROWS][MATRIX_COLS];
-
+extern uint8_t keycodes[6];
+extern uint8_t current_press_row[6];
+extern uint8_t current_press_col[6];
+extern uint8_t current_press_stat[6];
+extern uint8_t statPressed;
+//extern 
 /*
  * @brief deinitialize rtc pins
  */

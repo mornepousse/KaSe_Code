@@ -19,15 +19,32 @@
  * GPIO34-39 can only be set as input mode and do not have software pullup or pulldown functions.
  * GPIOS 0,2,4,12-15,25-27,32-39 Can be used as RTC GPIOS as well (please read about power management in ReadMe)
  */
-const gpio_num_t MATRIX_ROWS_PINS[] = { GPIO_NUM_6, GPIO_NUM_7, GPIO_NUM_8, GPIO_NUM_9, GPIO_NUM_21 };
-const gpio_num_t MATRIX_COLS_PINS[] = { GPIO_NUM_18, GPIO_NUM_17, GPIO_NUM_14, GPIO_NUM_13, GPIO_NUM_12, 
-                                        GPIO_NUM_11,GPIO_NUM_37, GPIO_NUM_36, GPIO_NUM_35,GPIO_NUM_34, 
-                                        GPIO_NUM_33,GPIO_NUM_47,GPIO_NUM_48};
+//const gpio_num_t MATRIX_ROWS_PINS[] = { GPIO_NUM_37, GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_36, GPIO_NUM_3 };
+const gpio_num_t MATRIX_ROWS_PINS[] = { GPIO_NUM_3, 
+										GPIO_NUM_36, 
+										GPIO_NUM_39, 
+										GPIO_NUM_40, 
+										GPIO_NUM_37 };
+const gpio_num_t MATRIX_COLS_PINS[] = { GPIO_NUM_21, //0
+										GPIO_NUM_47, //1
+										GPIO_NUM_48, //2
+										GPIO_NUM_45, //3
+										GPIO_NUM_35, //4
+                                        GPIO_NUM_38, //5
+										
+										GPIO_NUM_9,  //7
+										GPIO_NUM_10, //8
+										GPIO_NUM_11, //9
+                                        GPIO_NUM_12, //10
+                                        GPIO_NUM_13, //11
+										GPIO_NUM_14,//12
+										GPIO_NUM_46, };//6
 
 // matrix states
 uint8_t MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t PREV_MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t SLAVE_MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
+uint8_t keycodes[6] = { 0,0,0,0,0,0 };
 
 uint32_t lastDebounceTime = 0;
 
@@ -129,10 +146,15 @@ void matrix_setup(void) {
 
 uint8_t curState = 0;
 uint32_t DEBOUNCE_MATRIX[MATRIX_ROWS][MATRIX_COLS] = { 0 };
+uint8_t current_press_row[6] = { 255, 255, 255, 255, 255, 255 };
+uint8_t current_press_col[6] = { 255, 255, 255, 255, 255, 255 };
+uint8_t current_press_stat[6] = { 0, 0, 0, 0, 0, 0 };
+uint8_t statPressed = 0;
 // Scanning the matrix for input
 void scan_matrix(void) {
 #ifdef COL2ROW
 	// Setting column pin as low, and checking if the input of a row pin changes.
+
 	for (uint8_t col = 0; col < MATRIX_COLS; col++) {
 		gpio_set_level(MATRIX_COLS_PINS[col], 1);
 		for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
@@ -146,12 +168,43 @@ void scan_matrix(void) {
 
 				if (MATRIX_STATE[row][col] != curState) {
 					MATRIX_STATE[row][col] = curState;
+					uint8_t index = 0;
+					//uint8_t keycodeTMP = default_layouts[current_layout][row][col];
+					//uint8_t keycodeTMP = keymaps[current_layout][row][col];
 
-					uint8_t keycode[6] = {default_layouts[current_layout][row][col]};
-    				if(curState == 1)tud_hid_keyboard_report(1, 0, keycode);
-					else tud_hid_keyboard_report(1, 0, 0);
+					for (uint8_t i = 0; i < 6; i++)
+					{
+						if (current_press_col[i] == 255)
+						{
+							index = i;
+							break;
+						}
+					}
+					
+					for (uint8_t i = 0; i < 6; i++)
+					{
+						if (curState == 0 && current_press_col[i] == col && current_press_row[i] == row)
+						{
+							current_press_col[i] = 255;
+							current_press_row[i] = 255;
+							break;
+						}
+					}
+					if (curState == 1)
+					{
+						current_press_col[index] = col;
+						current_press_row[index] = row;
+						current_press_stat[index] = curState;
+					}
+					
+    				
 
-					ESP_LOGI(GPIO_TAG, "Row: %d, Col: %d, State: %d, K : %d", row, col, curState, keycode[0]);
+					//ESP_LOGI(GPIO_TAG, " 0: %d - %d, 1: %d - %d, 2: %d - %d, 3: %d - %d, 4: %d- %d, 5: %d - %d", 
+					//current_press_row[0], current_press_col[0], current_press_row[1], current_press_col[1], current_press_row[2], current_press_col[2], 
+					//current_press_row[3], current_press_col[3], current_press_row[4], current_press_col[4], current_press_row[5], current_press_col[5]);
+					//tud_hid_keyboard_report(1, 0, keycodes);
+					statPressed = 1;
+					//ESP_LOGI(GPIO_TAG, "Row: %d, Col: %d, State: %d, K : %d %d %d %d %d %d ", row, col, curState, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
 				}
 
 			}

@@ -9,11 +9,25 @@
 #include "keypress_handles.c"
 #include "keyboard_config.h"
 char **layer_names_arr;
-uint8_t layers_num=0;
+uint8_t layers_num = 0;
 TaskHandle_t xKeyreportTask;
-uint8_t interval = 100;
+uint8_t interval = 10;
+uint8_t clignot = 0;
 uint8_t current_interval = 0;
+uint8_t current_row_layer_changer = 255;
+uint8_t current_col_layer_changer = 255;
+uint8_t last_layer = 0;
 #define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
+#define CURSOR_LED_RED_PIN (GPIO_NUM_8)
+#define CURSOR_LED_GRN_PIN (GPIO_NUM_17)
+#define CURSOR_LED_BLU_PIN (GPIO_NUM_18)
+#define CURSOR_LED_WHT_PIN (GPIO_NUM_16)
+#define CURSOR_UP (GPIO_NUM_7)
+#define CURSOR_DWN (GPIO_NUM_15)
+#define CURSOR_LFT (GPIO_NUM_5)
+#define CURSOR_RHT (GPIO_NUM_6)
+
+uint8_t cursor_states[4] = {0, 0, 0, 0};//up, down, left, right
 
 static const char *TAG = "Main";
 
@@ -29,19 +43,18 @@ static const char *TAG = "Main";
  */
 const uint8_t hid_report_descriptor[] = {
     TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(HID_ITF_PROTOCOL_KEYBOARD)),
-    TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(HID_ITF_PROTOCOL_MOUSE))
-};
+    TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(HID_ITF_PROTOCOL_MOUSE))};
 
 /**
  * @brief String descriptor
  */
-const char* hid_string_descriptor[5] = {
+const char *hid_string_descriptor[5] = {
     // array of pointer to string descriptors
-    (char[]){0x09, 0x04},   // 0: is supported language is English (0x0409)
-    "Mae",                  // 1: Manufacturer
-    "Mae Keyboard",         // 2: Product
-    "1994",                 // 3: Serials, should use chip ID
-    "Keyboard",             // 4: HID
+    (char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
+    "Mae",                // 1: Manufacturer
+    "Mae Keyboard",       // 2: Product
+    "1994",               // 3: Serials, should use chip ID
+    "Keyboard",           // 4: HID
 };
 
 /**
@@ -69,26 +82,27 @@ uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance)
 // Invoked when received GET_REPORT control request
 // Application must fill buffer report's content and return its length.
 // Return zero will cause the stack to STALL request
-uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
+uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)
 {
-    (void) instance;
-    (void) report_id;
-    (void) report_type;
-    (void) buffer;
-    (void) reqlen;
+    (void)instance;
+    (void)report_id;
+    (void)report_type;
+    (void)buffer;
+    (void)reqlen;
 
     return 0;
 }
 
 // Invoked when received SET_REPORT control request or
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
-void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize)
+void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
 }
 
 /********* Application ***************/
 
-typedef enum {
+typedef enum
+{
     MOUSE_DIR_RIGHT,
     MOUSE_DIR_DOWN,
     MOUSE_DIR_LEFT,
@@ -96,8 +110,8 @@ typedef enum {
     MOUSE_DIR_MAX,
 } mouse_dir_t;
 
-#define DISTANCE_MAX        125
-#define DELTA_SCALAR        5
+#define DISTANCE_MAX 125
+#define DELTA_SCALAR 5
 
 static void mouse_draw_square_next_delta(int8_t *delta_x_ret, int8_t *delta_y_ret)
 {
@@ -105,16 +119,23 @@ static void mouse_draw_square_next_delta(int8_t *delta_x_ret, int8_t *delta_y_re
     static uint32_t distance = 0;
 
     // Calculate next delta
-    if (cur_dir == MOUSE_DIR_RIGHT) {
+    if (cur_dir == MOUSE_DIR_RIGHT)
+    {
         *delta_x_ret = DELTA_SCALAR;
         *delta_y_ret = 0;
-    } else if (cur_dir == MOUSE_DIR_DOWN) {
+    }
+    else if (cur_dir == MOUSE_DIR_DOWN)
+    {
         *delta_x_ret = 0;
         *delta_y_ret = DELTA_SCALAR;
-    } else if (cur_dir == MOUSE_DIR_LEFT) {
+    }
+    else if (cur_dir == MOUSE_DIR_LEFT)
+    {
         *delta_x_ret = -DELTA_SCALAR;
         *delta_y_ret = 0;
-    } else if (cur_dir == MOUSE_DIR_UP) {
+    }
+    else if (cur_dir == MOUSE_DIR_UP)
+    {
         *delta_x_ret = 0;
         *delta_y_ret = -DELTA_SCALAR;
     }
@@ -122,10 +143,12 @@ static void mouse_draw_square_next_delta(int8_t *delta_x_ret, int8_t *delta_y_re
     // Update cumulative distance for current direction
     distance += DELTA_SCALAR;
     // Check if we need to change direction
-    if (distance >= DISTANCE_MAX) {
+    if (distance >= DISTANCE_MAX)
+    {
         distance = 0;
         cur_dir++;
-        if (cur_dir == MOUSE_DIR_MAX) {
+        if (cur_dir == MOUSE_DIR_MAX)
+        {
             cur_dir = 0;
         }
     }
@@ -144,31 +167,176 @@ static void app_send_hid_demo(void)
     ESP_LOGI(TAG, "Sending Mouse report");
     int8_t delta_x;
     int8_t delta_y;
-    for (int i = 0; i < (DISTANCE_MAX / DELTA_SCALAR) * 4; i++) {
+    for (int i = 0; i < (DISTANCE_MAX / DELTA_SCALAR) * 4; i++)
+    {
         // Get the next x and y delta in the draw square pattern
         mouse_draw_square_next_delta(&delta_x, &delta_y);
         tud_hid_mouse_report(HID_ITF_PROTOCOL_MOUSE, 0x00, delta_x, delta_y, 0, 0);
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
-void key_reports(void *pvParameters) {
-	// Arrays for holding the report at various stages
-	uint8_t past_report[REPORT_LEN] = { 0 };
-	uint8_t report_state[REPORT_LEN];
-	while (1) {
-		//memcpy(report_state, check_key_state(), sizeof report_state);
-        scan_matrix();
-		//Check if the report was modified, if so send it
-        /*
-		if (memcmp(past_report, report_state, sizeof past_report) != 0) {
-			//void* pReport;
-			memcpy(past_report, report_state, sizeof past_report);
-			//pReport = (void *) &report_state;
-		}
-*/
-	}
+uint8_t cursor_pressed_state = 0; 
+void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_state)
+{
+    uint8_t state = gpio_get_level(CURSOR_Dir);
+    if (cursor_states[cursor_Selected_state] != state)
+    {
 
+        cursor_states[cursor_Selected_state] = state;
+        if (state == 1)
+        {
+
+            for (uint8_t i = 0; i < 6; i++)
+            {
+                if (keycodes[0] == 0)
+                {
+                    keycodes[0] = key;
+                    break;
+                }
+            }
+
+            tud_hid_keyboard_report(1, 0, keycodes);
+            if (cursor_pressed_state == 0)
+            {
+                cursor_pressed_state = 1;
+            }
+        }
+        else
+        {
+            for (uint8_t i = 0; i < 6; i++)
+            {
+                if (keycodes[0] == key)
+                {
+                    keycodes[0] = 0;
+                    break;
+                }
+            }
+            cursor_pressed_state = 0;
+            tud_hid_keyboard_report(1, 0, keycodes);
+        }
+    }
 }
+
+void vTaskTrackBall(void *pvParameters) // ICSH044A
+{
+    for (;;)
+    {
+        //ESP_LOGI(TAG, "test %d", gpio_get_level(CURSOR_UP));
+
+        if (tud_mounted())
+        {
+            getLvltrackball(CURSOR_UP, KC_UP, 0);
+            getLvltrackball(CURSOR_DWN, KC_DOWN, 1);
+            getLvltrackball(CURSOR_LFT, KC_LEFT, 2);
+            getLvltrackball(CURSOR_RHT, KC_RIGHT, 3);
+
+            if (cursor_pressed_state != 0)
+            {
+                cursor_pressed_state++;
+                ESP_LOGI(TAG, "state cursor");
+            }
+            if (cursor_pressed_state >= 100)
+            {
+                ESP_LOGI(TAG, "cursor_pressed_state %d", cursor_pressed_state);
+                cursor_pressed_state = 0;
+                for (uint8_t i = 0; i < 6; i++)
+                {
+                    if (keycodes[i] == KC_UP || keycodes[i] == KC_DOWN || keycodes[i] == KC_LEFT || keycodes[i] == KC_RIGHT)
+                    {
+                        keycodes[i] = 0;
+                    }
+                }
+            }
+            tud_hid_keyboard_report(1, 0, keycodes);
+        }
+
+        // Get the next x and y delta in the draw square pattern
+        // mouse_draw_square_next_delta(&delta_x, &delta_y);
+        // tud_hid_mouse_report(HID_ITF_PROTOCOL_MOUSE, 0x00, delta_x, delta_y, 0, 0);
+        vTaskDelay(pdMS_TO_TICKS(4));
+    }
+}
+
+void vTaskKeyboard(void *pvParameters)
+{
+    for (;;)
+    {
+        // Task code goes here.
+        scan_matrix();
+        uint8_t isPressed = 0;
+        for (uint8_t i = 0; i < 6; i++)
+        {
+            if (current_press_col[i] != 255)
+            {
+                uint8_t keycodeTMP = keymaps[current_layout][current_press_row[i]][current_press_col[i]];
+                if (keycodeTMP == KC_INT1)
+                {
+                    last_layer = current_layout;
+                    current_layout = 1;
+                    current_row_layer_changer = current_press_row[i];
+                    current_col_layer_changer = current_press_col[i];
+                    // ESP_LOGI("HIDD", "entre KC_INT1");
+                }
+                else
+                {
+                    if (current_row_layer_changer == current_press_row[i] && current_col_layer_changer == current_press_col[i])
+                    {
+                    }
+                    else
+                    {
+
+                        if (keycodeTMP == KC_NO)
+                        {
+                            keycodeTMP = keymaps[last_layer][current_press_row[i]][current_press_col[i]];
+                        }
+
+                        keycodes[i] = keycodeTMP;
+                    }
+                }
+                isPressed = 1;
+            }
+            else
+            {
+
+                keycodes[i] = 0;
+                isPressed = 1;
+            }
+        }
+        if (current_layout != last_layer)
+        {
+            uint8_t changer = 0;
+            for (uint8_t i = 0; i < 6; i++)
+            {
+                if (current_press_col[i] == current_col_layer_changer && current_press_row[i] == current_row_layer_changer)
+                {
+                    changer = 1;
+                    break;
+                }
+            }
+
+            if (changer == 0)
+            {
+                // ESP_LOGI("HIDD", "exit KC_INT1");
+                current_layout = last_layer;
+                current_col_layer_changer = 255;
+                current_row_layer_changer = 255;
+            }
+        }
+
+        if (tud_mounted())
+        {
+
+            if (statPressed == 1)
+            {
+                statPressed = 0;
+                // ESP_LOGI(TAG, "layer: %d K : %d %d %d %d %d %d ",current_layout, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
+                tud_hid_keyboard_report(1, 0, keycodes);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
 void app_main(void)
 {
     // Initialize button that will trigger HID reports
@@ -193,35 +361,73 @@ void app_main(void)
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
     ESP_LOGI(TAG, "USB initialization DONE");
-    
-    //Reset the rtc GPIOS   
-	rtc_matrix_deinit();
+
+    // Reset the rtc GPIOS
+    rtc_matrix_deinit();
     matrix_setup();
-    //nvs_load_layouts();
-    
-	//xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
 
-    while (1) {
-        if (tud_mounted()) {
+    gpio_set_direction(CURSOR_LED_RED_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(CURSOR_LED_GRN_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(CURSOR_LED_BLU_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(CURSOR_LED_WHT_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_level(CURSOR_LED_RED_PIN, 1);
+    gpio_set_level(CURSOR_LED_GRN_PIN, 0);
+    gpio_set_level(CURSOR_LED_BLU_PIN, 0);
+    gpio_set_level(CURSOR_LED_WHT_PIN, 0);
+
+    gpio_set_direction(CURSOR_UP, GPIO_MODE_INPUT);
+    gpio_set_direction(CURSOR_DWN, GPIO_MODE_INPUT);
+    gpio_set_direction(CURSOR_LFT, GPIO_MODE_INPUT);
+    gpio_set_direction(CURSOR_RHT, GPIO_MODE_INPUT);
+
+    TaskHandle_t xHandleMatrix_Keybord = NULL;
+    TaskHandle_t xHandleTrackBall = NULL;
+    static uint8_t ucParameterToPass;
+    xHandleMatrix_Keybord = xTaskCreate(vTaskKeyboard, "Matrix_Keyboard", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleMatrix_Keybord);
+    xHandleTrackBall = xTaskCreate(vTaskTrackBall, "TrackBall", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleTrackBall);
+
+    while (1)
+    {
+        if (tud_mounted())
+        {
             static bool send_hid_data = true;
-            if (send_hid_data) {
-                app_send_hid_demo();
-            }
-            send_hid_data = !gpio_get_level(APP_BUTTON);
-            scan_matrix();
+            if (send_hid_data)
+            {
 
-           current_interval++;
-            if (current_interval < interval) {
+                // app_send_hid_demo();
+                // xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
+            }
+            // send_hid_data = !gpio_get_level(APP_BUTTON);
+
+            current_interval++;
+            if (current_interval > interval)
+            {
                 current_interval = 0;
-                ESP_LOGI(TAG, "coucou");
-                //scan_matrix();
+                if (clignot == 0)
+                {
+                    clignot = 1;
+                }
+                else
+                {
+                    clignot = 0;
+                }
+                // ESP_LOGI("HIDD", "MAIN finished...");
             }
 
+            if (clignot == 1)
+            {
+                gpio_set_level(CURSOR_LED_GRN_PIN, 0);
+            }
+            else
+            {
+                gpio_set_level(CURSOR_LED_GRN_PIN, 1);
+            }
         }
-        else {
-            //activate keyboard BT stack
-	        //halBLEInit(1, 1, 1, 0);
-	        //ESP_LOGI("HIDD", "MAIN finished...");
+        else
+        {
+            // activate keyboard BT stack
+            // halBLEInit(1, 1, 1, 0);
+            // ESP_LOGI("HIDD", "MAIN finished...");
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }

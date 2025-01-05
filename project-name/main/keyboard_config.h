@@ -12,8 +12,8 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-#define MODULE_ID "LOLIN 32"
-#define GATTS_TAG "MK32 V3.0" // The device's name
+#define MODULE_ID "MORNEPOUSSE"
+#define GATTS_TAG "MAE V1.0A" // The device's name
 #define MAX_BT_DEVICENAME_LENGTH 40
 
 #define MASTER  // undefine if you are not flashing the main controller
@@ -23,7 +23,7 @@
 #define DEBOUNCE 4 //debounce time in ms
 
 //Define matrix
-#define KEYPADS 2 // intended in order to create a Multiple keypad split boards
+#define KEYPADS 1 // intended in order to create a Multiple keypad split boards
 #define MATRIX_ROWS 5 // For split keyboards, define rows for one side only.
 #define MATRIX_COLS 13 // For split keyboards, define columns for one side only.
 
@@ -42,7 +42,7 @@
 
 #define MAX_LAYER (LAYERS-1)
 #define MOD_LED_BYTES 2 //bytes for led status and modifiers
-#define KEYMAP_COLS MATRIX_COLS*KEYPADS  // used for a symmetrical split keyboard
+#define KEYMAP_COLS MATRIX_COLS
 #define REPORT_LEN (MOD_LED_BYTES+MATRIX_ROWS*KEYMAP_COLS) //size of hid reports with NKRO and room for 3 key 
 #define REPORT_COUNT_BYTES (MATRIX_ROWS*KEYMAP_COLS)
 
