@@ -10,7 +10,7 @@
 #include "keyboard_config.h"
 #include "lvgl.h"
 #include "screen_manager.h"
-//#include "bluetooth_manager.h"
+#include "hid_bluetooth_manager.h"
 
 char **layer_names_arr;
 
@@ -303,6 +303,7 @@ void vTaskKeyboard(void *pvParameters)
                 statPressed = 0;
                 // ESP_LOGI(TAG, "layer: %d K : %d %d %d %d %d %d ",current_layout, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
                 tud_hid_keyboard_report(1, 0, keycodes);
+                send_hid_bl_key(keycodes);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -358,8 +359,9 @@ void app_main(void)
     TaskHandle_t xHandleMatrix_Keybord = NULL;
     TaskHandle_t xHandleTrackBall = NULL;
     static uint8_t ucParameterToPass;
-    xHandleMatrix_Keybord = xTaskCreate(vTaskKeyboard, "Matrix_Keyboard", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleMatrix_Keybord);
-    xHandleTrackBall = xTaskCreate(vTaskTrackBall, "TrackBall", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleTrackBall);
+    xTaskCreate(vTaskKeyboard, "Matrix_Keyboard", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleMatrix_Keybord);
+    xTaskCreate(vTaskTrackBall, "TrackBall", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleTrackBall);
+    init_hid_bluetooth();
 
     while (1)
     {
