@@ -46,10 +46,11 @@ uint8_t last_layer = 0;
 #define TEST_DELAY_TIME_MS          (3000)
 
 uint8_t cursor_states[4] = {0, 0, 0, 0};//up, down, left, right
-
+uint8_t keypress_internal_function = 0;
 /************* BL ****************/
 #define CONFIG_BT_HID_DEVICE_ENABLED 1
 uint8_t bl_state = 0;
+uint8_t usb_bl_state = 0; // 0: USB, 1: BL
 /************* BL ****************/
 
 static const char *TAG = "Main";
@@ -136,6 +137,21 @@ typedef enum
 #define DISTANCE_MAX 125
 #define DELTA_SCALAR 5
 
+void send_hid_key(uint8_t keycodes[6])
+{
+    if(usb_bl_state == 0)
+                {
+                    if (tud_mounted())
+                        tud_hid_keyboard_report(1, 0, keycodes);
+                }
+                else
+                {
+                    send_hid_bl_key(keycodes);
+                }
+}
+
+
+
 uint8_t cursor_pressed_state = 0; 
 void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_state)
 {
@@ -156,7 +172,8 @@ void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_st
                 }
             }
 
-            tud_hid_keyboard_report(1, 0, keycodes);
+            //tud_hid_keyboard_report(1, 0, keycodes);
+            send_hid_key(keycodes);
             if (cursor_pressed_state == 0)
             {
                 cursor_pressed_state = 1;
@@ -173,7 +190,8 @@ void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_st
                 }
             }
             cursor_pressed_state = 0;
-            tud_hid_keyboard_report(1, 0, keycodes);
+            send_hid_key(keycodes);
+            //tud_hid_keyboard_report(1, 0, keycodes);
         }
     }
 }
@@ -208,7 +226,8 @@ void vTaskTrackBall(void *pvParameters) // ICSH044A
                     }
                 }
             }
-            tud_hid_keyboard_report(1, 0, keycodes);
+            send_hid_key(keycodes);
+            //tud_hid_keyboard_report(1, 0, keycodes);
         }
 
         // Get the next x and y delta in the draw square pattern
@@ -233,23 +252,14 @@ void vTaskKeyboard(void *pvParameters)
                 switch (keycodeTMP)
                 {
                 case KC_INT1:
-                    last_layer = current_layout;
+                last_layer = current_layout;
                     current_layout = 1;
                     current_row_layer_changer = current_press_row[i];
                     current_col_layer_changer = current_press_col[i];
-                    break;
+                break;
                 case KC_INT2:
-                    if(bl_state == 0)
-                    {
-                        bl_state = 1;
-                        gpio_set_level(CURSOR_LED_BLU_PIN, 1);
-                        //halBLEInit(1, 1, 1, 0);
-                    }
-                    else
-                    {
-                        bl_state = 0;
-                        gpio_set_level(CURSOR_LED_BLU_PIN, 0);
-                    }
+                case KC_INT3:
+                    keypress_internal_function = keycodeTMP;
                     break;
                 default:
                     if (current_row_layer_changer == current_press_row[i] && current_col_layer_changer == current_press_col[i])
@@ -288,27 +298,61 @@ void vTaskKeyboard(void *pvParameters)
 
             if (changer == 0)
             {
-                // ESP_LOGI("HIDD", "exit KC_INT1");
                 current_layout = last_layer;
                 current_col_layer_changer = 255;
                 current_row_layer_changer = 255;
             }
         }
 
-        if (tud_mounted())
-        {
+        
+        
 
-            if (statPressed == 1)
+            if (stat_matrix_changed == 1)
             {
-                statPressed = 0;
-                // ESP_LOGI(TAG, "layer: %d K : %d %d %d %d %d %d ",current_layout, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
-                tud_hid_keyboard_report(1, 0, keycodes);
-                send_hid_bl_key(keycodes);
+                stat_matrix_changed = 0;
+                if(keypress_internal_function != 0)
+                {
+                    switch (keypress_internal_function)
+                    {
+                case KC_INT2:
+                    if(bl_state == 0)
+                    {
+                        bl_state = 1;
+                        gpio_set_level(CURSOR_LED_BLU_PIN, 1);
+                        //halBLEInit(1, 1, 1, 0);
+                    }
+                    else
+                    {
+                        bl_state = 0;
+                        gpio_set_level(CURSOR_LED_BLU_PIN, 0);
+                    }
+                    break;
+                case KC_INT3:
+                    if(usb_bl_state == 0)
+                    {
+                        usb_bl_state = 1;
+                        gpio_set_level(CURSOR_LED_BLU_PIN, 1);
+                    }
+                    else
+                    {
+                        usb_bl_state = 0;
+                        gpio_set_level(CURSOR_LED_BLU_PIN, 0);
+                    }
+                    break;
+                    default:
+                        break;
+                    }
+                    keypress_internal_function = 0;
+                }
+                
+                // ESP_LOGI(TAG, "layer: %d : %d %d %d %d %d %d ",current_layout, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
+                send_hid_key(keycodes);
             }
-        }
+        
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
+
 
 void app_main(void)
 {

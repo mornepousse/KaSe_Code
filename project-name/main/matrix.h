@@ -26,7 +26,7 @@ extern uint8_t keycodes[6];
 extern uint8_t current_press_row[6];
 extern uint8_t current_press_col[6];
 extern uint8_t current_press_stat[6];
-extern uint8_t statPressed;
+extern uint8_t stat_matrix_changed;
 //extern 
 /*
  * @brief deinitialize rtc pins

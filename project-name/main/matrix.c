@@ -149,7 +149,7 @@ uint32_t DEBOUNCE_MATRIX[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t current_press_row[6] = { 255, 255, 255, 255, 255, 255 };
 uint8_t current_press_col[6] = { 255, 255, 255, 255, 255, 255 };
 uint8_t current_press_stat[6] = { 0, 0, 0, 0, 0, 0 };
-uint8_t statPressed = 0;
+uint8_t stat_matrix_changed = 0; // 1: matrix changed, 0: matrix not changed
 // Scanning the matrix for input
 void scan_matrix(void) {
 #ifdef COL2ROW
@@ -203,7 +203,7 @@ void scan_matrix(void) {
 					//current_press_row[0], current_press_col[0], current_press_row[1], current_press_col[1], current_press_row[2], current_press_col[2], 
 					//current_press_row[3], current_press_col[3], current_press_row[4], current_press_col[4], current_press_row[5], current_press_col[5]);
 					//tud_hid_keyboard_report(1, 0, keycodes);
-					statPressed = 1;
+					stat_matrix_changed = 1;
 					//ESP_LOGI(GPIO_TAG, "Row: %d, Col: %d, State: %d, K : %d %d %d %d %d %d ", row, col, curState, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
 				}
 
