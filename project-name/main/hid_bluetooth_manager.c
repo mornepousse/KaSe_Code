@@ -30,7 +30,7 @@ bool sec_conn = false;
 #define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
 
 #define HIDD_DEVICE_NAME            "MAE_KEYBOARD"
-#define HID_DEMO_TAG "HID_DEMO"
+#define HID_DEMO_TAG "HID_BL"
 
 static uint8_t hidd_service_uuid128[] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */

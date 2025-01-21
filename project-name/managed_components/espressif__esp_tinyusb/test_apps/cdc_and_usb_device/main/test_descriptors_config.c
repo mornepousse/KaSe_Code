@@ -27,18 +27,36 @@
 #define DEVICE_MOUNT_TIMEOUT_MS         5000
 
 // ========================= TinyUSB descriptors ===============================
-#define TUSB_DESC_TOTAL_LEN         (TUD_CONFIG_DESC_LEN)
 
-static uint8_t const test_fs_configuration_descriptor[] = {
+// Here we need to create dual CDC device, to match the CONFIG_TINYUSB_CDC_COUNT from sdkconfig.defaults
+static const uint16_t cdc_desc_config_len = TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN;
+static const uint8_t test_fs_configuration_descriptor[] = {
     // Config number, interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, 0, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(1, 0, 0, cdc_desc_config_len, TUSB_DESC_CONFIG_ATT_SELF_POWERED | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CDC_DESCRIPTOR(0, 4, 0x81, 8, 0x02, 0x82, 64),
+    TUD_CDC_DESCRIPTOR(2, 4, 0x83, 8, 0x04, 0x84, 64),
 };
 
 #if (TUD_OPT_HIGH_SPEED)
-static uint8_t const test_hs_configuration_descriptor[] = {
+static const uint8_t test_hs_configuration_descriptor[] = {
     // Config number, interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, 0, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(1, 4, 0, cdc_desc_config_len, TUSB_DESC_CONFIG_ATT_SELF_POWERED | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CDC_DESCRIPTOR(0, 4, 0x81, 8, 0x02, 0x82, 512),
+    TUD_CDC_DESCRIPTOR(2, 4, 0x83, 8, 0x04, 0x84, 512),
 };
+
+static const tusb_desc_device_qualifier_t device_qualifier = {
+    .bLength = sizeof(tusb_desc_device_qualifier_t),
+    .bDescriptorType = TUSB_DESC_DEVICE_QUALIFIER,
+    .bcdUSB = 0x0200,
+    .bDeviceClass = TUSB_CLASS_MISC,
+    .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+    .bDeviceProtocol = MISC_PROTOCOL_IAD,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
+    .bNumConfigurations = 0x01,
+    .bReserved = 0
+};
+
 #endif // TUD_OPT_HIGH_SPEED
 
 static const tusb_desc_device_t test_device_descriptor = {
@@ -122,7 +140,6 @@ TEST_CASE("descriptors_config_all_default", "[esp_tinyusb][usb_device]")
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 
@@ -136,6 +153,7 @@ TEST_CASE("descriptors_config_device", "[esp_tinyusb][usb_device]")
         .configuration_descriptor = NULL,
 #if (TUD_OPT_HIGH_SPEED)
         .hs_configuration_descriptor = NULL,
+        .qualifier_descriptor = &device_qualifier,
 #endif // TUD_OPT_HIGH_SPEED
     };
     // Install
@@ -144,7 +162,6 @@ TEST_CASE("descriptors_config_device", "[esp_tinyusb][usb_device]")
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 
@@ -158,6 +175,7 @@ TEST_CASE("descriptors_config_device_and_config", "[esp_tinyusb][usb_device]")
         .configuration_descriptor = test_fs_configuration_descriptor,
 #if (TUD_OPT_HIGH_SPEED)
         .hs_configuration_descriptor = NULL,
+        .qualifier_descriptor = &device_qualifier,
 #endif // TUD_OPT_HIGH_SPEED
     };
     // Install
@@ -166,7 +184,6 @@ TEST_CASE("descriptors_config_device_and_config", "[esp_tinyusb][usb_device]")
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 
@@ -180,6 +197,7 @@ TEST_CASE("descriptors_config_device_and_fs_config_only", "[esp_tinyusb][usb_dev
         .device_descriptor = &test_device_descriptor,
         .configuration_descriptor = test_fs_configuration_descriptor,
         .hs_configuration_descriptor = NULL,
+        .qualifier_descriptor = &device_qualifier,
     };
     // Install
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_install(&tusb_cfg));
@@ -187,7 +205,6 @@ TEST_CASE("descriptors_config_device_and_fs_config_only", "[esp_tinyusb][usb_dev
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 
@@ -200,6 +217,7 @@ TEST_CASE("descriptors_config_device_and_hs_config_only", "[esp_tinyusb][usb_dev
         .device_descriptor = &test_device_descriptor,
         .configuration_descriptor = NULL,
         .hs_configuration_descriptor = test_hs_configuration_descriptor,
+        .qualifier_descriptor = &device_qualifier,
     };
     // Install
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_install(&tusb_cfg));
@@ -207,7 +225,6 @@ TEST_CASE("descriptors_config_device_and_hs_config_only", "[esp_tinyusb][usb_dev
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 
@@ -220,6 +237,7 @@ TEST_CASE("descriptors_config_all_configured", "[esp_tinyusb][usb_device]")
         .device_descriptor = &test_device_descriptor,
         .fs_configuration_descriptor = test_fs_configuration_descriptor,
         .hs_configuration_descriptor = test_hs_configuration_descriptor,
+        .qualifier_descriptor = &device_qualifier,
     };
     // Install
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_install(&tusb_cfg));
@@ -227,7 +245,6 @@ TEST_CASE("descriptors_config_all_configured", "[esp_tinyusb][usb_device]")
     TEST_ASSERT_EQUAL(ESP_OK, __test_wait_conn());
     // Cleanup
     TEST_ASSERT_EQUAL(ESP_OK, tinyusb_driver_uninstall());
-    TEST_ASSERT_EQUAL(ESP_OK, tusb_stop_task());
     __test_free();
 }
 #endif // TUD_OPT_HIGH_SPEED

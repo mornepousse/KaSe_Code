@@ -7,7 +7,7 @@ description: Espressif's additions to TinyUSB
 documentation: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/peripherals/usb_device.html
 repository: git://github.com/espressif/esp-usb.git
 repository_info:
-  commit_sha: dfcb08a981b17e38140c98f3448aea8bb1861eac
+  commit_sha: c8b79f6644ef862b716730da570276237c88f675
   path: device/esp_tinyusb
 url: https://github.com/espressif/esp-usb/tree/master/device/esp_tinyusb
-version: 1.4.5
+version: 1.6.0
