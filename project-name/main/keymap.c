@@ -1,6 +1,3 @@
-#ifndef KEYMAP_C
-#define KEYMAP_C
-
 #include "key_definitions.h"
 #include "keyboard_config.h"
 #include "keymap.h"
@@ -56,5 +53,3 @@ uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 uint8_t current_layout = 0;
-
-#endif

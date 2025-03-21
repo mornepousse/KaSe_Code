@@ -1,8 +1,4 @@
-
-#ifndef MATRIX_C
-#define MATRIX_C
-
-//GPIO libraries
+#include "matrix.h"
 #include "esp_system.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
@@ -45,7 +41,7 @@ uint8_t MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t PREV_MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t SLAVE_MATRIX_STATE[MATRIX_ROWS][MATRIX_COLS] = { 0 };
 uint8_t keycodes[6] = { 0,0,0,0,0,0 };
-
+uint8_t last_layer = 0;
 uint32_t lastDebounceTime = 0;
 
 uint8_t (*matrix_states[])[MATRIX_ROWS][MATRIX_COLS] = { &MATRIX_STATE,
@@ -239,5 +235,3 @@ void scan_matrix(void) {
 #endif
 
 }
-
-#endif

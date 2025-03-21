@@ -1,47 +1,24 @@
 #include <stdlib.h>
+#include "esp_lcd_panel_ssd1306.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tinyusb.h"
 #include "class/hid/hid_device.h"
-#include "driver/gpio.h"
 #include "matrix.h"
-//#include "keypress_handles.c"
-#include "keyboard_config.h"
-#include "lvgl.h"
 #include "hid_bluetooth_manager.h"
-#include "key_definitions.h"
-#include "keymap.h"
-#include "driver/ledc.h"
+#include "ICSH044A.h"
+#include "keyboard_manager.h"
 
-char **layer_names_arr;
+#include "unity.h"
+#include "unity_test_runner.h"
+#include "esp_heap_caps.h"
 
-uint8_t layers_num = 0;
-TaskHandle_t xKeyreportTask;
-uint8_t interval = 100;
-uint8_t clignot = 0;
-uint8_t current_interval = 0;
-uint8_t current_row_layer_changer = 255;
-uint8_t current_col_layer_changer = 255;
-uint8_t last_layer = 0;
-uint8_t modif = 0;
-#define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
-#define CURSOR_LED_RED_PIN (GPIO_NUM_8)
-#define CURSOR_LED_GRN_PIN (GPIO_NUM_17)
-#define CURSOR_LED_BLU_PIN (GPIO_NUM_18)
-#define CURSOR_LED_WHT_PIN (GPIO_NUM_16)
-#define CURSOR_UP (GPIO_NUM_7)
-#define CURSOR_DWN (GPIO_NUM_15)
-#define CURSOR_LFT (GPIO_NUM_5)
-#define CURSOR_RHT (GPIO_NUM_6)
 #define TEST_DELAY_TIME_MS (3000)
 
-uint8_t cursor_states[4] = {0, 0, 0, 0}; // up, down, left, right
-uint8_t keypress_internal_function = 0;
 /************* BL ****************/
 #define CONFIG_BT_HID_DEVICE_ENABLED 1
-uint8_t bl_state = 0;
-uint8_t usb_bl_state = 0; // 0: USB, 1: BL
+
 /************* BL ****************/
 
 static const char *TAG = "Main";
@@ -128,350 +105,37 @@ typedef enum
 #define DISTANCE_MAX 125
 #define DELTA_SCALAR 5
 
-void send_hid_key(uint8_t keycodes[6])
+
+// Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
+#define TEST_MEMORY_LEAK_THRESHOLD (-300)
+
+static size_t before_free_8bit;
+static size_t before_free_32bit;
+
+static void check_leak(size_t before_free, size_t after_free, const char *type)
 {
-    if (usb_bl_state == 0)
-    {
-        if (tud_mounted())
-            tud_hid_keyboard_report(1, 0, keycodes);
-    }
-    else
-    {
-        send_hid_bl_key(keycodes);
-    }
+    ssize_t delta = after_free - before_free;
+    printf("MALLOC_CAP_%s: Before %u bytes free, After %u bytes free (delta %d)\n", type, before_free, after_free, delta);
+    TEST_ASSERT_MESSAGE(delta >= TEST_MEMORY_LEAK_THRESHOLD, "memory leak");
 }
 
-uint8_t cursor_pressed_state = 0;
-void getLvltrackball(uint8_t CURSOR_Dir, uint8_t key, uint8_t cursor_Selected_state)
+void setUp(void)
 {
-    uint8_t state = gpio_get_level(CURSOR_Dir);
-    if (cursor_states[cursor_Selected_state] != state)
-    {
-
-        cursor_states[cursor_Selected_state] = state;
-        if (state == 1)
-        {
-
-            for (uint8_t i = 0; i < 6; i++)
-            {
-                if (keycodes[0] == 0)
-                {
-                    keycodes[0] = key;
-                    break;
-                }
-            }
-
-            // tud_hid_keyboard_report(1, 0, keycodes);
-            send_hid_key(keycodes);
-            if (cursor_pressed_state == 0)
-            {
-                cursor_pressed_state = 1;
-            }
-        }
-        else
-        {
-            for (uint8_t i = 0; i < 6; i++)
-            {
-                if (keycodes[0] == key)
-                {
-                    keycodes[0] = 0;
-                    break;
-                }
-            }
-            cursor_pressed_state = 0;
-            send_hid_key(keycodes);
-        }
-    }
+    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 }
 
-void vTaskTrackBall(void *pvParameters) // ICSH044A
+void tearDown(void)
 {
-    for (;;)
-    {
-        // ESP_LOGI(TAG, "test %d", gpio_get_level(CURSOR_UP));
-
-        if (tud_mounted())
-        {
-            getLvltrackball(CURSOR_UP, K_UP, 0);
-            getLvltrackball(CURSOR_DWN, K_DOWN, 1);
-            getLvltrackball(CURSOR_LFT, K_LEFT, 2);
-            getLvltrackball(CURSOR_RHT, K_RIGHT, 3);
-
-            if (cursor_pressed_state != 0)
-            {
-                cursor_pressed_state++;
-                ESP_LOGI(TAG, "state cursor");
-            }
-            if (cursor_pressed_state >= 100)
-            {
-                ESP_LOGI(TAG, "cursor_pressed_state %d", cursor_pressed_state);
-                cursor_pressed_state = 0;
-                for (uint8_t i = 0; i < 6; i++)
-                {
-                    if (keycodes[i] == K_UP || keycodes[i] == K_DOWN 
-                    || keycodes[i] == K_LEFT || keycodes[i] == K_RIGHT)
-                    {
-                        keycodes[i] = 0;
-                    }
-                }
-            }
-            send_hid_key(keycodes);
-        }
-
-        // Get the next x and y delta in the draw square pattern
-        // mouse_draw_square_next_delta(&delta_x, &delta_y);
-        // tud_hid_mouse_report(HID_ITF_PROTOCOL_MOUSE, 0x00, delta_x, delta_y, 0, 0);
-        vTaskDelay(pdMS_TO_TICKS(4));
-    }
-}
-
-void run_internal_funct()
-{
-    switch (keypress_internal_function)
-    {
-    case K_INT2:
-        if (current_layout == 2)
-        {
-            current_layout = 0;
-            last_layer = current_layout;
-            ESP_LOGI(TAG, "layer: 0");
-            gpio_set_level(CURSOR_LED_WHT_PIN, 0);
-        }
-        else
-        {
-            current_layout = 2;
-            last_layer = current_layout;
-            ESP_LOGI(TAG, "layer: 2");
-            gpio_set_level(CURSOR_LED_WHT_PIN, 1);
-        }
-        break;
-    case K_INT3:
-        if (usb_bl_state == 0)
-        {
-            usb_bl_state = 1;
-            gpio_set_level(CURSOR_LED_BLU_PIN, 1);
-        }
-        else
-        {
-            usb_bl_state = 0;
-            gpio_set_level(CURSOR_LED_BLU_PIN, 0);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-void vTaskKeyboard(void *pvParameters)
-{
-    for (;;)
-    {
-        // Task code goes here.
-        scan_matrix();
-        for (uint8_t i = 0; i < 6; i++)
-        {
-            if (current_press_col[i] != 255)
-            {
-                uint16_t keycodeTMP = keymaps[current_layout][current_press_row[i]][current_press_col[i]];
-                
-                switch (keycodeTMP)
-                {
-                case K_INT1:
-                    last_layer = current_layout;
-                    current_layout = 1;
-                    current_row_layer_changer = current_press_row[i];
-                    current_col_layer_changer = current_press_col[i];
-                    break;
-                case K_INT2:
-                case K_INT3:
-                    if (keypress_internal_function == 0)
-                    {
-                        keypress_internal_function = keycodeTMP;
-                    }
-                default:
-                    if (current_row_layer_changer == current_press_row[i] && current_col_layer_changer == current_press_col[i])
-                    {
-                    }
-                    else
-                    {
-                        if (keycodeTMP == K_NO)
-                        {
-                            keycodeTMP = keymaps[last_layer][current_press_row[i]][current_press_col[i]];
-                        }
-
-                        keycodes[i] = keycodeTMP;
-                    }
-                    break;
-                }
-            }
-            else
-            {
-                keycodes[i] = 0;
-            }
-        }
-        if (current_layout != last_layer)
-        {
-            uint8_t changer = 0;
-            for (uint8_t i = 0; i < 6; i++)
-            {
-                if (current_press_col[i] == current_col_layer_changer && current_press_row[i] == current_row_layer_changer)
-                {
-                    changer = 1;
-                    break;
-                }
-            }
-
-            if (changer == 0)
-            {
-                current_layout = last_layer;
-                current_col_layer_changer = 255;
-                current_row_layer_changer = 255;
-            }
-        }
-        if (stat_matrix_changed == 1)
-        {
-            stat_matrix_changed = 0;
-
-            if (keypress_internal_function != 0)
-            {
-                uint8_t Key_is_up = 0;
-                for (uint8_t i = 0; i < 6; i++)
-                {
-                    if (keycodes[i] == keypress_internal_function)
-                    {
-                        Key_is_up = 1;
-                        ESP_LOGI(TAG, "pressed");
-                        break;
-                    }
-                }
-                if (Key_is_up == 0)
-                {
-                    run_internal_funct();
-                    keypress_internal_function = 0;
-                }
-            }
-            ESP_LOGI(TAG, "layer: %d : %d %d %d %d %d %d ", current_layout, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]);
-            send_hid_key(keycodes);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
+    size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+    check_leak(before_free_8bit, after_free_8bit, "8BIT");
+    check_leak(before_free_32bit, after_free_32bit, "32BIT");
 }
 
 
-#define LEDC_TIMER              LEDC_TIMER_0
-#define LEDC_MODE               LEDC_LOW_SPEED_MODE
-#define LEDC_OUTPUT_IO          (CURSOR_LED_GRN_PIN) // Define the output GPIO
-#define LEDC_CHANNEL            LEDC_CHANNEL_0
-#define LEDC_DUTY_RES           LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
-#define LEDC_DUTY               (4096) // Set duty to 50%. (2 ** 13) * 50% = 4096
-#define LEDC_FREQUENCY          (4000) // Frequency in Hertz. Set frequency at 4 kHz
-static void example_ledc_init(void)
-{
-    // Prepare and then apply the LEDC PWM timer configuration
-    ledc_timer_config_t ledc_timer_green = {
-        .speed_mode       = LEDC_MODE,
-        .duty_resolution  = LEDC_DUTY_RES,
-        .timer_num        = LEDC_TIMER,
-        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 4 kHz
-        .clk_cfg          = LEDC_AUTO_CLK
-    };
-    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer_green));
-
-    // Prepare and then apply the LEDC PWM channel configuration
-    ledc_channel_config_t ledc_channel_green = {
-        .speed_mode     = LEDC_MODE,
-        .channel        = LEDC_CHANNEL,
-        .timer_sel      = LEDC_TIMER,
-        .intr_type      = LEDC_INTR_DISABLE,
-        .gpio_num       = LEDC_OUTPUT_IO,
-        .duty           = 0, // Set duty to 0%
-        .hpoint         = 0
-    };
-    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel_green));
-
-    //eeeeeeeeeeeeeeeeeeeeeeeeee
-
-    // Prepare and then apply the LEDC PWM timer configuration
-    ledc_timer_config_t ledc_timer_red = {
-        .speed_mode       = LEDC_MODE,
-        .duty_resolution  = LEDC_DUTY_RES,
-        .timer_num        = LEDC_TIMER,
-        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 4 kHz
-        .clk_cfg          = LEDC_AUTO_CLK
-    };
-    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer_red));
-
-    // Prepare and then apply the LEDC PWM channel configuration
-    ledc_channel_config_t ledc_channel_red = {
-        .speed_mode     = LEDC_MODE,
-        .channel        = LEDC_CHANNEL_1,
-        .timer_sel      = LEDC_TIMER,
-        .intr_type      = LEDC_INTR_DISABLE,
-        .gpio_num       = CURSOR_LED_WHT_PIN,
-        .duty           = 0, // Set duty to 0%
-        .hpoint         = 0
-    };
-    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel_red));
-}
-uint16_t Led_I_GRN = 0;
-uint8_t Led_UP_DOWN_GRN = 0;
-uint16_t Led_I_RED = 0;
-uint8_t Led_UP_DOWN_RED = 0;
-void vTaskLED_Animation(void *pvParameters)
-{
-    for (;;)
-    {
-        if(Led_UP_DOWN_GRN == 0)
-        {
-            Led_I_GRN += 10;
-            if(Led_I_GRN >= 4096)
-            {
-                Led_UP_DOWN_GRN = 1;
-            }
-        }
-        else
-        {
-            Led_I_GRN -= 10;
-            if(Led_I_GRN <= 1024)
-            {
-                Led_UP_DOWN_GRN = 0;
-            }
-        }
-        ESP_ERROR_CHECK(ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, Led_I_GRN));
-        ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL));
-        if(Led_UP_DOWN_RED == 0)
-        {
-            Led_I_RED += 20;
-            if(Led_I_RED >= 2096)
-            {
-                Led_UP_DOWN_RED = 1;
-            }
-        }
-        else
-        {
-            Led_I_RED -= 20;
-            if(Led_I_RED <= 512)
-            {
-                Led_UP_DOWN_RED = 0;
-            }
-        }
-        ESP_ERROR_CHECK(ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, Led_I_RED));
-        ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1));
-        vTaskDelay(pdMS_TO_TICKS(5));
-    }
-}
 void app_main(void)
 {
-    // Initialize button that will trigger HID reports
-    const gpio_config_t boot_button_config = {
-        .pin_bit_mask = BIT64(APP_BUTTON),
-        .mode = GPIO_MODE_INPUT,
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_up_en = true,
-        .pull_down_en = false,
-    };
-    ESP_ERROR_CHECK(gpio_config(&boot_button_config));
 
     ESP_LOGI(TAG, "USB initialization");
     const tinyusb_config_t tusb_cfg = {
@@ -488,24 +152,7 @@ void app_main(void)
     // Reset the rtc GPIOS
     rtc_matrix_deinit();
     matrix_setup();
-
-    // Init_gc9a01();
-    // init_bl_mn();
-
-    gpio_set_direction(CURSOR_LED_RED_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_direction(CURSOR_LED_GRN_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_direction(CURSOR_LED_BLU_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_direction(CURSOR_LED_WHT_PIN, GPIO_MODE_OUTPUT);
-
-    gpio_set_level(CURSOR_LED_RED_PIN, 0);
-    gpio_set_level(CURSOR_LED_GRN_PIN, 0);
-    gpio_set_level(CURSOR_LED_BLU_PIN, 0);
-    gpio_set_level(CURSOR_LED_WHT_PIN, 0);
-
-    gpio_set_direction(CURSOR_UP, GPIO_MODE_INPUT);
-    gpio_set_direction(CURSOR_DWN, GPIO_MODE_INPUT);
-    gpio_set_direction(CURSOR_LFT, GPIO_MODE_INPUT);
-    gpio_set_direction(CURSOR_RHT, GPIO_MODE_INPUT);
+    initISH044A();
 
     TaskHandle_t xHandleMatrix_Keybord = NULL;
     TaskHandle_t xHandleTrackBall = NULL;
@@ -513,46 +160,23 @@ void app_main(void)
     static uint8_t ucParameterToPass;
     xTaskCreate(vTaskKeyboard, "Matrix_Keyboard", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleMatrix_Keybord);
     xTaskCreate(vTaskTrackBall, "TrackBall", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleTrackBall);
-
     example_ledc_init();
     xTaskCreate(vTaskLED_Animation, "LED_Animation", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &xHandleLEDanim);
     init_hid_bluetooth();
-    
-
- 
+    unity_run_menu();
     while (1)
     {
-        current_interval++;
-        if (current_interval > interval)
-        {
-            current_interval = 0;
-            if (clignot == 0)
-            {
-                clignot = 1;
-            }
-            else
-            {
-                clignot = 0;
-            }
-            // ESP_LOGI("HIDD", "MAIN finished...");
-        }
+
         if (tud_mounted())
         {
             static bool send_hid_data = true;
             if (send_hid_data)
             {
-                // gpio_set_level(CURSOR_LED_GRN_PIN, 1);
-                //  app_send_hid_demo();
-                //  xTaskCreatePinnedToCore(key_reports, "key report task", 8192, xKeyreportTask, configMAX_PRIORITIES, NULL, 1);
             }
-            // send_hid_data = !gpio_get_level(APP_BUTTON);
 
-            // gpio_set_level(CURSOR_LED_WHT_PIN, 0);
-            
         }
         if (tud_suspended())
         {
-            //gpio_set_level(CURSOR_LED_GRN_PIN, 0);
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
